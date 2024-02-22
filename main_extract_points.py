@@ -6,6 +6,7 @@ import math, plotting
 from typing import List
 import csv_writer
 
+# convert latitude and longitude to x and y coordinates
 def convert_long_lat_to_x_y(data):
     # define the reference point (in this case, the first data point)
     ref_lat, ref_lon = 0, 0
@@ -22,15 +23,35 @@ def convert_long_lat_to_x_y(data):
     R = 6371000.0 # Earth's radius in meters
     distances = R * math.sqrt(dx * dx + dy * dy)
 
-    # assign the first data point as the origin
-    x, y = [0], [0]
-
     # calculate x and y coordinates
     distance = distances
     bearing = math.atan2(dy, dx)
     # x.append(distance * math.cos(bearing))
     # y.append(distance * math.sin(bearing))
     return Position(distance * math.cos(bearing), distance * math.sin(bearing))
+
+# Convert x, y coordinates to latitude and longitude
+def convert_x_y_to_long_lat(data, ref_lat=0, ref_lon=0):
+    R = 6371000.0 # Earth's radius in meters
+
+    # Convert reference latitude and longitude to radians
+    ref_lat_rad = math.radians(ref_lat)
+    ref_lon_rad = math.radians(ref_lon)
+
+    # Calculate bearing and distance from x, y coordinates
+    bearing = math.atan2(data.y, data.x)
+    distance = math.sqrt(data.x**2 + data.y**2)
+
+    # Calculate latitude and longitude using spherical trigonometry
+    lat_rad = math.asin(math.sin(ref_lat_rad) * math.cos(distance / R) + math.cos(ref_lat_rad) * math.sin(distance / R) * math.cos(bearing))
+    lon_rad = ref_lon_rad + math.atan2(math.sin(bearing) * math.sin(distance / R) * math.cos(ref_lat_rad), math.cos(distance / R) - math.sin(ref_lat_rad) * math.sin(lat_rad))
+
+    # Convert radians to degrees
+    lat_deg = math.degrees(lat_rad)
+    lon_deg = math.degrees(lon_rad)
+
+    return Position(lon_deg, lat_deg)
+
 
 def parse_geometries(placemark:geometry):
         if hasattr(placemark, "geometry"):  # check if the placemark has a geometry or not
